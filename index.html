@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<title>Intro con rayos y fuego</title>
+<style>
+.introlight {
+  margin:0; padding:0;
+  font-family:'Segoe UI', sans-serif;
+  background:#0a0a0a; 
+  overflow:hidden;
+}
+
+/* Contenedor de rayos */
+.intro {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:#0a0a0a;
+  z-index:9999;
+  pointer-events:none;
+}
+
+/* Rayos principales */
+.lightning {
+  position: absolute;
+  width: 4px;
+  background: #0ff;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff, 0 0 80px #0ff;
+  opacity: 0;
+}
+
+/* Rama del rayo */
+.branch {
+  position: absolute;
+  width: 2px;
+  background: #0ff;
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+  opacity: 0;
+}
+
+/* Contenedor de fuego y bombillo */
+.intro-sequence { position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:999; pointer-events:none; background:transparent; }
+.background { position:absolute; width:100%; height:100%; background:#0a0a0a; z-index:0; }
+
+.fire { position:relative; width:180px; height:180px; margin-bottom:100px; z-index:1; }
+.flame { position:absolute; bottom:0; left:50%; width:60px; height:160px; background: radial-gradient(circle at bottom,#ffeb42 0%,#ff4f00 80%); border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; transform:translateX(-50%); animation:flicker 0.12s infinite alternate; filter: drop-shadow(0 0 25px #ff8c00); }
+.flame1 { left:48%; width:55px; height:155px; }
+.flame2 { left:52%; width:65px; height:160px; }
+.flame3 { left:50%; width:60px; height:158px; }
+.fire-reflection { position:absolute; bottom:0; left:50%; width:360px; height:240px; background:radial-gradient(circle, rgba(255,180,80,0.25) 0%, transparent 80%); transform:translateX(-50%) translateY(20px); filter:blur(12px); transition:opacity 3s; }
+
+@keyframes flicker { 0%{transform:translateX(-50%) scaleY(1) rotate(0deg);} 25%{transform:translateX(-48%) scaleY(1.05) rotate(2deg);} 50%{transform:translateX(-52%) scaleY(0.95) rotate(-2deg);} 75%{transform:translateX(-49%) scaleY(1.08) rotate(1deg);} 100%{transform:translateX(-50%) scaleY(1) rotate(0deg);} }
+
+.switch-bulb { display:flex; flex-direction:column; align-items:center; opacity:0; transition:opacity 0.5s; z-index:2; }
+.toggle-switch.vertical { width:50px; height:100px; background:#fff; border-radius:10px; display:flex; justify-content:center; align-items:flex-start; padding:5px; box-shadow:inset 0 0 5px #ccc; margin-bottom:40px; }
+.switch-track { width:40px; height:90px; background:#666; border-radius:12px; position:relative; }
+.switch-inner { position:absolute; top:2px; left:2px; width:36px; height:36px; background:#0ff; border-radius:4px; box-shadow:0 0 15px #0ff,0 0 35px #0ff; transition:top 1s; }
+
+.bulb-new { position: relative; width:150px; height:170px; margin-top:20px; opacity:1; }
+.bulb-outer { position: relative; width:100%; height:100%; background:rgba(255,255,255,0.9); border-radius:50% 50% 45% 45%; display:flex; justify-content:center; align-items:center; box-shadow: inset 0 0 15px #555;}
+.screw { position:absolute; width:16px; height:16px; background:#888; border-radius:50%; top:55px; }
+.screw-left { left:10px; } 
+.screw-right { right:10px; }
+.bulb-inner { width:60%; height:60%; background:rgba(85,85,85,0.6); border-radius:50%; display:flex; justify-content:center; align-items:center; position:relative; transition:background 1.2s, box-shadow 1.2s; box-shadow:0 0 10px rgba(255,255,0,0);}
+.resistor-symbol { width:40%; height:20%; background:#555; clip-path: polygon(0% 50%, 10% 30%, 20% 70%, 30% 30%, 40% 70%, 50% 30%, 60% 70%, 70% 30%, 80% 70%, 90% 30%, 100% 50%); transition:background 1.2s, box-shadow 1.2s; z-index:2; position:relative; }
+.glow { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%; box-shadow:0 0 0 0 rgba(255,235,66,0); transition:box-shadow 1.2s; z-index:1; }
+@keyframes flickerBulb { 0%,100% { opacity:1; } 20% { opacity:0.7; } 40% { opacity:0.9; } 60% { opacity:0.6; } 80% { opacity:0.85; } }
+</style>
+</head>
+<body>
+
+<div class="intro" id="intro">
+  <div class="lightning" id="l1"></div>
+  <div class="lightning" id="l2"></div>
+  <div class="lightning" id="l3"></div>
+</div>
+
+<div class="intro-sequence">
+  <div class="background"></div>
+  <div class="fire" id="fire">
+    <div class="flame flame1"></div>
+    <div class="flame flame2"></div>
+    <div class="flame flame3"></div>
+    <div class="fire-reflection"></div>
+  </div>
+
+  <div class="switch-bulb" id="switch-bulb" style="opacity:0;">
+    <div class="toggle-switch vertical">
+      <div class="switch-track">
+        <div class="switch-inner" id="switch"></div>
+      </div>
+    </div>
+
+    <div class="bulb-new">
+      <div class="bulb-outer">
+        <div class="screw screw-left"></div>
+        <div class="screw screw-right"></div>
+        <div class="bulb-inner" id="bulb-inner">
+          <div class="resistor-symbol" id="resistor-symbol"></div>
+          <div class="glow" id="bulb-glow"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const lightningElements = [
+  document.getElementById('l1'),
+  document.getElementById('l2'),
+  document.getElementById('l3')
+];
+
+function createBranches(lightning){
+  const branches=[];
+  const branchCount=Math.floor(Math.random()*3)+2;
+  for(let i=0;i<branchCount;i++){
+    const b=document.createElement('div');
+    b.className='branch';
+    lightning.appendChild(b);
+    branches.push(b);
+  }
+  return branches;
+}
+
+function animateLightning(lightning, delay){
+  setTimeout(()=>{
+    lightning.style.left='50%';
+    lightning.style.top='0';
+    const branches=createBranches(lightning);
+    let flashes=Math.floor(Math.random()*4)+6;
+    let i=0;
+    const interval=setInterval(()=>{
+      lightning.style.opacity=(i%2===0)?1:0;
+      lightning.style.height=`${80+Math.random()*40}%`;
+      lightning.style.transform=`translateX(${Math.random()*20-10}px) rotate(${Math.random()*20-10}deg)`;
+      branches.forEach(b=>{
+        b.style.opacity=(i%2===0)?1:0;
+        b.style.height=`${30+Math.random()*40}%`;
+        const offsetX=Math.random()*40-20;
+        b.style.transform=`translate(${offsetX}px, ${Math.random()*20}px) rotate(${Math.random()*40-20}deg)`;
+      });
+      i++;
+      if(i>=flashes*2){
+        clearInterval(interval);
+        lightning.style.opacity=0;
+        branches.forEach(b=>b.remove());
+      }
+    },120);
+  }, delay);
+}
+
+// Rayos consecutivos
+animateLightning(lightningElements[0],0);
+animateLightning(lightningElements[1],500);
+animateLightning(lightningElements[2],1000);
+
+// Después de rayos 1s negro y luego animación de fuego
+setTimeout(()=>{
+  document.getElementById('intro').style.display='none';
+  document.body.style.background='#000';
+
+  const fire=document.getElementById('fire');
+  const switchBulb=document.getElementById('switch-bulb');
+  const switchInner=document.getElementById('switch');
+  const bulbInner=document.getElementById('bulb-inner');
+  const resistorSymbol=document.getElementById('resistor-symbol');
+  const bulbGlow=document.getElementById('bulb-glow');
+
+  fire.style.transition='opacity 4s';
+  fire.style.opacity=0;
+  fire.querySelectorAll('.flame').forEach(f=>f.style.animation='none');
+  fire.querySelector('.fire-reflection').style.opacity=0;
+
+  setTimeout(()=>{
+    switchBulb.style.opacity=1;
+    setTimeout(()=>{
+      switchInner.style.top='52px';
+      setTimeout(()=>{
+        bulbInner.style.background='#ffeb42';
+        resistorSymbol.style.background='#ff4a00';
+        bulbInner.style.boxShadow='0 0 80px 35px rgba(255,235,66,0.9), inset 0 0 20px #fff';
+        resistorSymbol.style.boxShadow='0 0 25px 8px rgba(255,90,0,0.9)';
+        bulbGlow.style.boxShadow='0 0 120px 50px rgba(255,235,66,0.95)';
+        resistorSymbol.style.animation='flickerBulb 0.2s infinite alternate';
+        bulbGlow.style.animation='flickerBulb 0.2s infinite alternate';
+
+        setTimeout(()=>{
+          let step=0;
+          const fadeInterval=setInterval(()=>{
+            step+=0.01;
+            if(step>=1){
+              clearInterval(fadeInterval);
+              bulbInner.style.background='rgba(85,85,85,0.6)';
+              resistorSymbol.style.background='#333';
+              bulbGlow.style.boxShadow='0 0 0 0 rgba(255,235,66,0)';
+              setTimeout(()=>{
+                document.body.style.background='#000';
+                document.querySelector('.intro-sequence').style.display='none';
+              },2000);
+              return;
+            }
+            const r=85+(255-85)*(1-step);
+            const g=85+(235-85)*(1-step);
+            const b=66;
+            bulbInner.style.background=`rgba(${r},${g},${b},0.6)`;
+            resistorSymbol.style.background=`rgba(${255*(1-step)},${74*(1-step)},0,1)`;
+            bulbGlow.style.boxShadow=`0 0 ${120*(1-step)}px ${50*(1-step)}px rgba(255,235,66,${0.95*(1-step)})`;
+          },50);
+        },900);
+
+      },500);
+    },200);
+  },4000);
+
+},3500); // Rayos + 1s negro
+</script>
+
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Tesla Section -->
+<div class="tesla-section">
+  <img src="https://cdn.pixabay.com/photo/2024/06/30/19/21/ai-generated-8863791_1280.png" alt="Nikola Tesla" class="tesla-image">
+  <p class="tesla-quote">“El presente es de ustedes, pero el futuro por el que tanto trabajé es mío.”</p>
+   <p class="tesla-quote">“Nikola Tesla”</p>
+</div>
+
+<style>
+  .tesla-section {
+    background: rgba(20, 20, 20, 0.95);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+    text-align: center;
+    max-width: 600px;
+    margin: 50px auto; /* centra dentro de tu página */
+    animation: fadeIn 2s ease-in-out;
+  }
+
+  .tesla-image {
+    width: 220px;
+    height: 220px;
+    border: 3px solid cyan;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px cyan;
+    object-fit: cover;
+  }
+
+  .tesla-quote {
+    font-size: 1.4rem;
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff, 0 0 15px #0ff, 0 0 30px #0ff;
+    animation: neon-flicker 2s infinite alternate;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes neon-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+      opacity: 1;
+    }
+    20%, 24%, 55% {
+      opacity: 0.4;
+    }
+  }
+</style>
+
+  <title>Elektron — Electricidad & Plomería</title>
+  <meta name="description" content="Elektron: Electricidad y PVC al puro estilo de antaño. Todo en Moneda Local." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0a0b10;
+      --panel: #0f111a;
+      --panel-2: #111321;
+      --text: #e8e8ff;
+      --muted: #a6a5c4;
+      --accent: #00e5ff;  /* cian neón */
+      --accent-2: #ff00e6; /* magenta neón */
+      --accent-3: #fffd82; /* amarillo suave */
+      --ok: #30ff9f; 
+      --danger: #ff477e;
+      --radius: 18px;
+      --shadow-neon: 0 0 10px var(--accent), 0 0 20px var(--accent), 0 0 40px rgba(0,229,255,.35);
+      --shadow-mag: 0 0 10px var(--accent-2), 0 0 28px rgba(255,0,230,.4);
+      --glow-soft: 0 0 60px rgba(0, 229, 255, .15);
+      --grid-gap: clamp(14px, 2vw, 22px);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background: radial-gradient(1200px 800px at 85% -10%, rgba(255,0,230,.08), transparent 60%),
+                              radial-gradient(900px 700px at -10% 110%, rgba(0,229,255,.08), transparent 60%),
+                              linear-gradient(180deg, #07080e, #0a0b10);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      line-height:1.6;
+      overflow-x:hidden;
+    }
+
+    /* ====== Utilidades ====== */
+    .container{width:min(1200px, 92vw); margin-inline:auto}
+    .grid{display:grid; gap:var(--grid-gap)}
+    .btn{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:12px 18px; border-radius:999px; border:1px solid rgba(255,255,255,.1);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      color:var(--text); text-decoration:none; font-weight:600; letter-spacing:.3px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 10px 30px rgba(0,0,0,.3);
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .btn:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,.18); box-shadow: var(--glow-soft), 0 10px 40px rgba(0,0,0,.45); }
+    .btn--accent{ border-color:rgba(0,229,255,.5); text-shadow:0 0 6px rgba(0,229,255,.6); box-shadow: var(--shadow-neon) }
+
+    .tag{font-size:.8rem; color:var(--accent); text-shadow:0 0 6px rgba(0,229,255,.8); letter-spacing:.12em}
+
+    /* ====== Header / Nav ====== */
+    header{
+      position:sticky; top:0; z-index:50; backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(12,14,24,.85), rgba(12,14,24,.55));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .nav{ display:flex; align-items:center; justify-content:space-between; padding:14px 0 }
+    .logo{
+      font-family: Orbitron, Inter, sans-serif; font-weight:800; letter-spacing:.08em;
+      font-size: clamp(22px, 3vw, 28px); color:var(--accent); text-decoration:none;
+      text-transform:uppercase; position:relative;
+      filter: drop-shadow(0 0 12px rgba(0,229,255,.6));
+    }
+    .logo::after{
+      content:"Elektron"; position:absolute; inset:0; left:2px; top:2px; color:var(--accent-2); opacity:.45; filter: blur(4px);
+      z-index:-1; pointer-events:none;
+    }
+    nav a{ color:var(--muted); text-decoration:none; margin-inline:12px; font-weight:600 }
+    nav a:hover{ color:var(--text) }
+
+    /* ====== Hero ====== */
+    .hero{ position:relative; padding: 56px 0 36px; overflow:hidden }
+    .hero::before{
+      content:""; position:absolute; inset:-2px; background:
+        radial-gradient(600px 300px at 10% 0%, rgba(255,0,230,.1), transparent 70%),
+        radial-gradient(700px 320px at 90% 100%, rgba(0,229,255,.12), transparent 70%);
+      filter: blur(30px); z-index:-1;
+    }
+    .hero-wrap{ display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:center }
+    @media (max-width: 900px){ .hero-wrap{ grid-template-columns:1fr; } }
+
+    .hero h1{
+      font-family: Orbitron, Inter, sans-serif; font-size: clamp(34px, 4.2vw, 56px);
+      line-height:1.1; margin:0 0 14px; letter-spacing:.02em;
+      color:#cfefff; text-shadow: 0 0 8px rgba(0,229,255,.8), 0 0 22px rgba(255,0,230,.45);
+    }
+    .hero p{ color:#c8c7e8; font-size: clamp(14px, 1.2vw, 18px) }
+
+    .stats{ display:flex; gap:22px; margin-top:18px; flex-wrap:wrap }
+    .stat{
+      padding:14px 16px; border:1px solid rgba(255,255,255,.08); border-radius: var(--radius);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+      min-width: 160px;
+    }
+    .stat b{ font-family: Orbitron; font-size:20px; display:block; color:var(--accent) }
+
+    .hero-art{
+      position:relative; aspect-ratio: 1.1/1; border-radius: var(--radius);
+      background: radial-gradient(800px 500px at 100% 0%, rgba(0,229,255,.12), rgba(0,0,0,0) 60%),
+                  linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      overflow:hidden; box-shadow: var(--shadow-neon);
+    }
+    .hero-art img{ width:100%; height:100%; object-fit:cover; opacity:.85; mix-blend:screen }
+
+    /* ====== Secciones ====== */
+    .section{ padding: 52px 0 }
+    .section h2{
+      font-family: Orbitron; letter-spacing:.06em; margin:0 0 18px; font-size: clamp(22px, 2.4vw, 32px);
+      color:#e9e6ff; text-shadow: 0 0 6px rgba(255,0,230,.6);
+    }
+    .section .sub{ color:var(--muted); margin-top:-6px }
+
+    /* ====== Tarjetas de productos ====== */
+    .products{ grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) ); }
+    .card{
+      position:relative; border-radius: calc(var(--radius) - 2px);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow: 0 6px 24px rgba(0,0,0,.3);
+      overflow:hidden; transition: transform .15s ease, box-shadow .15s ease, border-color .2s ease;
+    }
+    .card:hover{ transform: translateY(-4px); border-color: rgba(0,229,255,.45); box-shadow: var(--shadow-neon) }
+    .card .badge{ position:absolute; top:10px; left:10px; font-size:11px; letter-spacing:.12em; padding:6px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05) }
+    .card .badge--hot{ color:var(--accent-2); text-shadow:0 0 8px rgba(255,0,230,.8) }
+    .card .badge--new{ color:var(--accent); text-shadow:0 0 8px rgba(0,229,255,.8) }
+    .card img{ width:100%; aspect-ratio: 1 / 1; object-fit:contain; background: radial-gradient(900px 400px at 20% 0%, rgba(255,0,230,.15), transparent 60%), linear-gradient(180deg, #0c0f1c, #0a0b10) }
+    .card .content{ padding:14px 14px 16px }
+    .card h3{ margin:0 0 4px; font-size:16px; letter-spacing:.02em }
+    .card p{ margin:0; color:var(--muted); font-size:13px; min-height: 34px }
+    .price{ margin-top:10px; font-weight:800; font-family: Orbitron; font-size:18px; color: var(--accent-3); text-shadow: 0 0 8px rgba(255,253,130,.6) }
+    .actions{ display:flex; gap:10px; margin-top:12px }
+    .btn-add{ flex:1; justify-content:center; border-color: rgba(0,229,255,.4); box-shadow: var(--shadow-neon) }
+    .btn-fav{ padding:12px; width:44px; justify-content:center }
+
+    /* ====== Categorías ====== */
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px }
+    .tab{
+      padding:8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      cursor:pointer; user-select:none; font-weight:700; letter-spacing:.04em; color:#d8d7ff;
+    }
+    .tab.is-active{ color:var(--accent); text-shadow:0 0 8px rgba(0,229,255,.8); border-color: rgba(0,229,255,.5) }
+
+    /* ====== Callouts ====== */
+    .notice{
+      margin-top: 18px; padding:14px 16px; border-radius: var(--radius);
+      border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      font-size:14px; color:#caccff
+    }
+
+    /* ====== Footer ====== */
+    footer{ margin-top: 52px; padding: 42px 0; border-top:1px solid rgba(255,255,255,.06); background: linear-gradient(180deg, rgba(12,14,24,.65), rgba(12,14,24,.35)) }
+    .footer-grid{ display:grid; grid-template-columns:2fr 1fr 1fr; gap:28px }
+    @media (max-width: 900px){ .footer-grid{ grid-template-columns:1fr } }
+    .footer h4{ font-family:Orbitron; margin:0 0 10px; color:#f0eeff }
+    .legal{ color:#a6a5c4; font-size:12px; margin-top: 24px }
+
+    /* ====== Detalles neon ====== */
+    .neon-divider{ height:1px; background: linear-gradient(90deg, transparent, rgba(0,229,255,.45), rgba(255,0,230,.45), transparent); filter: blur(.4px); box-shadow: 0 0 12px rgba(0,229,255,.4) }
+    .glow-title{ text-shadow: 0 0 8px rgba(0,229,255,.8), 0 0 18px rgba(255,0,230,.55) }
+
+    /* ====== Flicker ====== */
+    @keyframes pulse{
+      0%,100%{ opacity:1 }
+      60%{ opacity:.88 }
+      80%{ opacity:.96 }
+    }
+    .flicker{ animation:pulse 2.8s infinite ease-in-out }
+
+    /* ====== WhatsApp bubble ====== */
+    .wa{ position:fixed; right:16px; bottom:16px; background:#1fa855; color:white; text-decoration:none; padding:12px 16px; border-radius:999px; font-weight:800; box-shadow: 0 10px 30px rgba(0,0,0,.4) }
+
+    /* ====== Responsive tweaks ====== */
+    .hide-sm{ display:block }
+    @media (max-width: 700px){ .hide-sm{ display:none } }
+
+  </style>
+</head>
+<body>
+  <!-- Header / Nav -->
+  <header>
+    <div class="container nav">
+      <a class="logo" href="#">Elektron</a>
+      <nav>
+        <a href="#productos">Productos</a>
+        <a href="#electricidad">Electricidad</a>
+        <a href="#plomeria">Plomería</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-wrap">
+      <div>
+        <span class="tag flicker">DISTRIBUIDOR AUTORIZADO · GARANTÍA</span>
+        <h1 class="glow-title">Electricidad & Plomería <span style="color:var(--accent-2)"> Ferretería </span> y servicio de otro nivel</h1>
+        <p>
+          Bienvenido a <b>Elektron</b>. Somos tu tienda en Honduras para soluciones de <b>electricidad</b> y <b>plomería</b> con un catálogo amplio, asesoría experta y precios en <b>Lempiras (L)</b>.
+        </p>
+        <div class="stats">
+          <div class="stat"><b>+1,200</b> productos disponibles</div>
+          <div class="stat"><b>24/7</b> cotizaciones por WhatsApp</div>
+          <div class="stat"><b>48h</b> entregas en zona urbana</div>
+        </div>
+        <div style="margin-top:18px">
+          <a href="#productos" class="btn btn--accent">Ver catálogo</a>
+          <a href="#contacto" class="btn">Solicitar cotización</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <!-- Sustituye esta imagen por una real (PNG recomendado) -->
+        <img src="/media/dvd/Ventoy/Logo Elektron.png" alt="Montaje de electricidad y plomería estilo neón" />
+      </div>
+    </div>
+  </section>
+
+  <div class="neon-divider"></div>
+
+  <!-- Destacados -->
+  <section class="section" id="productos">
+    <div class="container">
+      <h2>Productos destacados</h2>
+      <p class="sub">Precios en Lempiras. </p>
+
+      <div class="tabs">
+        <span class="tab is-active">Todos</span>
+        <span class="tab">Nuevos</span>
+        <span class="tab">En oferta</span>
+        <span class="tab">Más vendidos</span>
+      </div>
+
+      <div class="grid products">
+        <!-- ====== Cards de ejemplo (24+) ====== -->
+        <!-- ELECTRICIDAD -->
+        <article class="card" id="electricidad">
+          <span class="badge badge--new">NUEVO</span>
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/107320.png" alt="Cable de cobre THHN 12 AWG"/>
+          <div class="content">
+            <h3>Cable THHN Cobre 12 AWG</h3>
+            <p>Rollo 100m – Aislamiento resistente a 600V.</p>
+            <div class="price">L 3,250</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#" aria-label="Favorito">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <span class="badge badge--hot">HOT</span>
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/101524.png" alt="Interruptor de 3 vías"/>
+          <div class="content">
+            <h3>Interruptor 3 Vías</h3>
+            <p>Placa termo resistente. Color negro mate.</p>
+            <div class="price">L 185</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://lumiarthonduras.com/wp-content/uploads/2023/06/1_WSUS2UMVBTCW.png" alt="Tomacorriente doble con USB"/>
+          <div class="content">
+            <h3>Tomacorriente Doble + USB</h3>
+            <p>2x AC + 2x USB-A 2.4A. Ideal cocina/oficina.</p>
+            <div class="price">L 540</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://amalgama.com.py/wp-content/uploads/2024/11/130149-Foco-LED-6500k20220v-E27-Le-Lumiere_750.png" alt="Foco LED 18W"/>
+          <div class="content">
+            <h3>Foco LED 18W</h3>
+            <p>Alta luminosidad | 6,500K | 90 lm/W.</p>
+            <div class="price">L 120</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://lumiarthonduras.com/wp-content/uploads/2021/08/AAA/01-FSP302A48W-PANEL-LED-2X2-Oficina-1.png" alt="Panel LED 60x60"/>
+          <div class="content">
+            <h3>Panel LED 60×60cm 48W</h3>
+            <p>Driver incluido. Marco slim blanco.</p>
+            <div class="price">L 1,450</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/103522.png" alt="Centro de carga 8 circuitos"/>
+          <div class="content">
+            <h3>Centro de Carga 8 Circuitos</h3>
+            <p>Para breakers termomagnéticos. IP40.</p>
+            <div class="price">L 1,990</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- PLOMERÍA -->
+        <article class="card" id="plomeria">
+          <span class="badge badge--new">NUEVO</span>
+          <img src="https://cdnx.jumpseller.com/modern-space/image/32587414/resize/540/600?1677453274" alt="Llave monoblock lavamanos"/>
+          <div class="content">
+            <h3>Llave Monoblock Lavamanos</h3>
+            <p>Cuerpo de latón, cartucho cerámico 35mm.</p>
+            <div class="price">L 1,150</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://ferrebaratillo.com/imagenes/100778.png" alt="Tubería PVC 1/2"/>
+          <div class="content">
+            <h3>Tubería PVC 1/2" Presión</h3>
+            <p>Barra 6m | Cédula 40 | Agua fría.</p>
+            <div class="price">L 165</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/100820.png" alt="Codo PVC 1/2"/>
+          <div class="content">
+            <h3>Codo PVC 90° 1/2"</h3>
+            <p>Termofusión precisa. Paquete x10.</p>
+            <div class="price">L 80</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://boxitowspublic1.s3.us-east-2.amazonaws.com/wp-content/uploads/2022/01/08120145/PV8221_C1.png" alt="Ducha de teléfono"/>
+          <div class="content">
+            <h3>Regadera Tipo Teléfono</h3>
+            <p>Acabado cromo. 3 funciones. Con manguera.</p>
+            <div class="price">L 560</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://boxitowspublic1.s3.us-east-2.amazonaws.com/wp-content/uploads/2021/11/22095802/PG3166_C1.png" alt="Pegamento PVC"/>
+          <div class="content">
+            <h3>Cemento PVC 118ml</h3>
+            <p>Secado rápido. Alta adherencia.</p>
+            <div class="price">L 150</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/103676.png" alt="Trampa P-trap"/>
+          <div class="content">
+            <h3>Trampa P 1-1/2"</h3>
+            <p>Para lavamanos estándar. Blanca.</p>
+            <div class="price">L 110</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- MIX ADICIONALES (para llegar 24+) -->
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/120408.png" alt="Canaleta plástica"/>
+          <div class="content">
+            <h3>Canaleta Plástica 40×25</h3>
+            <p>Autoadhesiva. Tapa con clip. 2m.</p>
+            <div class="price">L 220</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://jwjlight.mx/wp-content/uploads/2023/07/JLRE-S-Web-min.png" alt="Reflector LED 50W"/>
+          <div class="content">
+            <h3>Reflector LED 50W IP65</h3>
+            <p>Exterior. 6,000K. Vidrio templado.</p>
+            <div class="price">L 720</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://clasic.com.co//wp-content/uploads/2023/07/TUBERIA-PEX-AL-PEX-AGUA-1-2-1.png" alt="Tubería PEX"/>
+          <div class="content">
+            <h3>Tubería PEX 1/2" (Rollo 50m)</h3>
+            <p>Agua caliente y fría. Flexible.</p>
+            <div class="price">L 2,650</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://idealtridon.mx/wp-content/uploads/2024/07/valvula-1.png" alt="Válvula de esfera"/>
+          <div class="content">
+            <h3>Válvula Esfera 1/2" Latón</h3>
+            <p>Rosca NPT. Manija metálica.</p>
+            <div class="price">L 210</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/114744.png" alt="Cinta teflón"/>
+          <div class="content">
+            <h3>Cinta PTFE (Teflón)</h3>
+            <p>Sello para roscas. 12mm × 10m.</p>
+            <div class="price">L 25</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://www.ultralam.mx/wp-content/uploads/2021/11/ultrarain-canaletas-pvc-lluvia-ultralam-mexico-canal.png" alt="Canalón pluvial"/>
+          <div class="content">
+            <h3>Canalón Pluvial PVC</h3>
+            <p>Sección 3m. Color blanco.</p>
+            <div class="price">L 480</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratillo.com/imagenes/105372.png" alt="Tubería CPVC"/>
+          <div class="content">
+            <h3>Tubería CPVC 3/4"</h3>
+            <p>Alta temperatura. Barra 3m.</p>
+            <div class="price">L 320</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://jwjlight.mx/wp-content/uploads/2023/07/JTL-5050RGB1.png" alt="Tira LED"/>
+          <div class="content">
+            <h3>Tira LED RGB 5m</h3>
+            <p>Control remoto. 12V. Interior.</p>
+            <div class="price">L 450</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/100499.png" alt="Tomacorriente industrial"/>
+          <div class="content">
+            <h3>Tomacorriente Industrial 20A</h3>
+            <p>Grado comercial. 125V.</p>
+            <div class="price">L 195</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratillo.com/imagenes/124020.png" alt="Ducha eléctrica"/>
+          <div class="content">
+            <h3>Ducha Eléctrica 5500W</h3>
+            <p>Selección de temperatura. Con manguera.</p>
+            <div class="price">L 1,380</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://www.americanstandardca.com/wp-content/themes/american/timthumb.php?src=https://www.americanstandardca.com/wp-content/uploads/2024/01/Broadway_onepiece_Amstd-2.png&w=580&h=630&zc=1" alt="Sanitario una pieza"/>
+          <div class="content">
+            <h3>Sanitario Una Pieza</h3>
+            <p>Descarga 4.8L. Asiento soft-close.</p>
+            <div class="price">L 5,950</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://shop.cerarte.com.do/product/image/medium/000579_cera-019495_0.png" alt="Lavamanos"/>
+          <div class="content">
+            <h3>Lavamanos Suspendido</h3>
+            <p>Cerámica blanca. Sifón oculto.</p>
+            <div class="price">L 2,450</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/108054.png" alt="Breaker 2 polos 20A"/>
+          <div class="content">
+            <h3>Breaker 2P 20A</h3>
+            <p>Termomagnético. Curva C.</p>
+            <div class="price">L 420</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://impofusion.com/wp-content/uploads/2025/04/PRENSA-MANUAL-PEX-AL-PEX.webp" alt="Herramienta multiprensa PEX"/>
+          <div class="content">
+            <h3>Multiprensa PEX</h3>
+            <p>Mandíbulas 1/2"–1". Profesional.</p>
+            <div class="price">L 6,900</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://casamarcus.com/media/catalog/product/cache/07f2d967b2d9cb28838481b805738ced/c/a/casa-marcus_bomba-presurizadora-15-9c-orange-pumps-shimge_3672.png"/>
+          <div class="content">
+            <h3>Bomba Presurizadora 1/2HP</h3>
+            <p>Automática. 110V. 35 PSI.</p>
+            <div class="price">L 4,800</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/105864.png" alt="Tanque hidroneumático"/>
+          <div class="content">
+            <h3>Tanque Hidroneumático 24L</h3>
+            <p>Membrana intercambiable. Horizontal.</p>
+            <div class="price">L 3,900</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/101966.png" alt="Conduit EMT"/>
+          <div class="content">
+            <h3>Conduit EMT 3/4"</h3>
+            <p>Barra 3m. Galvanizado.</p>
+            <div class="price">L 185</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://argoselectrica.com/wp-content/uploads/2021/03/caja-con-tapa-gris.png" alt="Caja de registro"/>
+          <div class="content">
+            <h3>Caja de Registro 4×4</h3>
+            <p>Metálica. Tapa incluida.</p>
+            <div class="price">L 95</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://arc-led.co.uk/app/uploads/2024/05/varilight-1-gang-2-way-v-com-push-onoff-rotary-led-dimmer-1-x-40-600w-twin-plate.png" alt="Dimmer LED"/>
+          <div class="content">
+            <h3>Dimmer LED 600W</h3>
+            <p>Compatible 110–127V. Placa negro mate.</p>
+            <div class="price">L 640</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://s.alicdn.com/@sc04/kf/HTB1_b90cL1H3KVjSZFB762SMXXay.png_720x720q50.png" alt="Bomba de sumidero"/>
+          <div class="content">
+            <h3>Bomba Sumidero 1HP</h3>
+            <p>Agua limpia. Flotador incluido.</p>
+            <div class="price">L 6,200</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://assets.hansgrohe.com/mam/celum/celum_assets/154__hpr02685_tif.png?format=HBW2" alt="Mezcladora empotrable"/>
+          <div class="content">
+            <h3>Mezcladora Ducha Empotrable</h3>
+            <p>Monomando. Acabado níquel cepillado.</p>
+            <div class="price">L 3,400</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://data.kleintools.com/sites/all/product_assets/png/klein/92516.png" alt="Flexómetro"/>
+          <div class="content">
+            <h3>Flexómetro 5m</h3>
+            <p>Cuerpo ABS. Cinta con recubrimiento.</p>
+            <div class="price">L 160</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://www.ht-instruments.com/media/products/products_ht/HT22D.png" alt="Multímetro digital"/>
+          <div class="content">
+            <h3>Multímetro Digital</h3>
+            <p>Auto rango. Sonda incluida.</p>
+            <div class="price">L 980</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <img src="https://distribucionesveloz.com/assets/uploads/1a5f53d7e51627e3a9d61ceb6ce976d1.png" alt="Llaves de tubo"/>
+          <div class="content">
+            <h3>Llave Stilson 14"</h3>
+            <p>Acero forjado. Mango antideslizante.</p>
+            <div class="price">L 590</div>
+            <div class="actions">
+              <a class="btn btn-add" href="#">Añadir</a>
+              <a class="btn btn-fav" href="#">❤</a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="notice">
+        ¿Quieres ver el catálogo completo? Escríbenos por WhatsApp para enviarte la lista en PDF y descuentos por volumen.
+      </div>
+    </div>
+  </section>
+
+  <div class="neon-divider"></div>
+
+  <!-- Servicios -->
+  <section class="section">
+    <div class="container">
+      <h2>Servicios técnicos</h2>
+      <p class="sub">Instalaciones eléctricas, diseño de iluminación, y proyectos de plomería residencial y comercial.</p>
+
+      <div class="grid" style="grid-template-columns: repeat(3, 1fr)">
+        <div class="stat">
+          <b>Instalación</b>
+          Tableros, cableado, canalización y puesta en marcha certificada.
+        </div>
+        <div class="stat">
+          <b>Mantenimiento</b>
+          Correctivo y preventivo en sistemas eléctricos e hidráulicos.
+        </div>
+        <div class="stat">
+          <b>Diseño</b>
+          Asesoría en iluminación, ahorro energético y optimización hidráulica.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="neon-divider"></div>
+
+  <!-- Contacto -->
+  <section class="section" id="contacto">
+    <div class="container footer">
+      <h2>Contacto & Ubicación</h2>
+
+      <div class="footer-grid">
+        <div>
+          <h4>Elektron</h4>
+          <p>Electricidad y Plomería | Ventas al por mayor y detalle.</p>
+          <p><b>Tel:</b> +504 9999-9999<br/>
+             <b>Correo:</b> ventas@elektron.hn</p>
+          <p><b>Dirección:</b> Blvd. Principal, Local 7, Tegucigalpa, Honduras</p>
+        </div>
+        <div>
+          <h4>Horario</h4>
+          <p>Lunes a Viernes 8:00–18:00<br/>Sábado 9:00–14:00</p>
+          <p class="tag">Soporte 24/7 por WhatsApp</p>
+        </div>
+        <div>
+          <h4>Redes</h4>
+          <p>
+            <a class="btn" href="#">Facebook</a>
+            <a class="btn" href="#">Instagram</a>
+            <a class="btn" href="#">TikTok</a>
+          </p>
+        </div>
+      </div>
+
+      <p class="legal">© <span id="year"></span> Elektron. Todos los derechos reservados. Hecho con ❤ en Honduras.</p>
+    </div>
+  </section>
+
+  <!-- WhatsApp CTA -->
+  <a class="wa" href="https://wa.me/50499999999" target="_blank" rel="noopener">WhatsApp</a>
+
+  <script>
+    // Solo una pequeña mejora: año actual (permanece HTML+CSS principal)
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
